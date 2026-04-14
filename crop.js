@@ -30,27 +30,29 @@
 
   // ---- Public API ----
   window.openCropModal = function (imgEl, callback) {
-    sourceImage = imgEl;
     onConfirmCb = callback;
     currentRatio = 'free';
     ratioBtns.forEach(b => b.classList.toggle('active', b.dataset.ratio === 'free'));
-    initCanvas();
     modal.classList.remove('hidden');
     backdrop.classList.remove('hidden');
+    initCanvas(imgEl);
   };
 
   // ---- Init canvas with source image ----
-  function initCanvas() {
+  function initCanvas(imgEl) {
+    // Ensure image is ready: if incomplete, draw white and wait
+    const isReady = imgEl.complete && imgEl.naturalWidth > 0;
+
     const maxW = stage.parentElement.clientWidth  - 0;
     const maxH = Math.min(window.innerHeight - 280, 520);
 
-    const imgW = sourceImage.naturalWidth  || sourceImage.width;
-    const imgH = sourceImage.naturalHeight || sourceImage.height;
+    const imgW = imgEl.naturalWidth  || imgEl.width  || 100;
+    const imgH = imgEl.naturalHeight || imgEl.height || 100;
 
     displayScale = Math.min(maxW / imgW, maxH / imgH, 1);
 
-    const dW = Math.round(imgW * displayScale);
-    const dH = Math.round(imgH * displayScale);
+    const dW = Math.max(100, Math.round(imgW * displayScale));
+    const dH = Math.max(100, Math.round(imgH * displayScale));
 
     cropCanvas.width  = dW;
     cropCanvas.height = dH;
@@ -58,6 +60,28 @@
     cropCanvas.style.height = dH + 'px';
 
     const ctx = cropCanvas.getContext('2d');
+
+    if (!isReady) {
+      // Image not ready yet: show white placeholder and wait
+      ctx.fillStyle = '#333';
+      ctx.fillRect(0, 0, dW, dH);
+      ctx.fillStyle = '#fff';
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('加载中...', dW/2, dH/2);
+
+      imgEl.onload = () => {
+        sourceImage = imgEl;
+        initCanvas(imgEl); // re-init once ready
+      };
+      // Initial box
+      box = { x: 0, y: 0, w: dW, h: dH };
+      updateBoxDOM();
+      return;
+    }
+
+    // Image is ready
+    sourceImage = imgEl;
     ctx.drawImage(sourceImage, 0, 0, dW, dH);
 
     // Default box: full image
