@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>拼豆图纸生成器 · MARD 色号</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <span class="logo-icon">🫘</span>
+          <span class="logo-text">拼豆图纸生成器</span>
+          <span class="logo-sub">MARD 标准色号</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- Left Panel: Controls -->
+      <aside class="panel panel-left">
+        <section class="section upload-section">
+          <h2 class="section-title">① 上传图片</h2>
+          <div class="upload-area" id="uploadArea">
+            <input type="file" id="fileInput" accept="image/*" hidden />
+            <div class="upload-placeholder" id="uploadPlaceholder">
+              <span class="upload-icon">📷</span>
+              <p>点击或拖拽图片到此处</p>
+              <p class="upload-hint">支持 JPG、PNG、GIF、WebP</p>
+            </div>
+            <img id="previewImg" class="preview-img hidden" alt="预览" />
+          </div>
+        </section>
+
+        <section class="section settings-section">
+          <h2 class="section-title">② 设置参数</h2>
+          <div class="form-group">
+            <label for="gridSize">预览缩放（不影响导出清晰度）</label>
+            <div class="slider-row">
+              <input type="range" id="gridSize" min="4" max="32" value="10" step="1" />
+              <span id="gridSizeVal" class="val-badge">10px</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="canvasWidth">图纸宽度（豆）</label>
+            <div class="slider-row">
+              <input type="range" id="canvasWidth" min="10" max="80" value="40" step="1" />
+              <span id="canvasWidthVal" class="val-badge">40</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="canvasHeight">图纸高度（豆）</label>
+            <div class="slider-row">
+              <input type="range" id="canvasHeight" min="10" max="80" value="40" step="1" />
+              <span id="canvasHeightVal" class="val-badge">40</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="maxColors">最多使用颜色数</label>
+            <div class="slider-row">
+              <input type="range" id="maxColors" min="4" max="60" value="30" step="1" />
+              <span id="maxColorsVal" class="val-badge">30</span>
+            </div>
+          </div>
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="showGrid" checked />
+              显示网格线
+            </label>
+            <label>
+              <input type="checkbox" id="showCode" checked />
+              显示色号标注
+            </label>
+          </div>
+          <button class="btn btn-primary" id="generateBtn" disabled>
+            <span class="btn-icon">✨</span> 生成图纸
+          </button>
+        </section>
+
+        <!-- Color Palette Used -->
+        <section class="section palette-section hidden" id="paletteSection">
+          <h2 class="section-title">用色清单</h2>
+          <div id="paletteList" class="palette-list"></div>
+        </section>
+      </aside>
+
+      <!-- Right Panel: Canvas Output -->
+      <div class="panel panel-right">
+        <div class="canvas-toolbar hidden" id="canvasToolbar">
+          <button class="btn btn-outline" id="exportPngBtn">
+            <span>⬇️</span> 下载图纸 PNG
+          </button>
+          <button class="btn btn-outline" id="exportListBtn">
+            <span>📋</span> 下载采购清单
+          </button>
+        </div>
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <div class="empty-state" id="emptyState">
+            <p>🎨</p>
+            <p>上传图片并点击「生成图纸」后，图纸将显示在这里</p>
+          </div>
+          <canvas id="outputCanvas" class="hidden"></canvas>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Hidden canvas for export -->
+  <canvas id="exportCanvas" style="display:none"></canvas>
+
+  <script src="colorData.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
