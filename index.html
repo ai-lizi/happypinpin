@@ -31,7 +31,10 @@
               <p>点击或拖拽图片到此处</p>
               <p class="upload-hint">支持 JPG、PNG、GIF、WebP</p>
             </div>
-            <img id="previewImg" class="preview-img hidden" alt="预览" />
+            <div id="previewContainer" class="preview-container hidden">
+              <img id="previewImg" class="preview-img" alt="预览" />
+              <button class="btn-recrop" id="recropBtn" title="重新裁剪">✂️ 重新裁剪</button>
+            </div>
           </div>
         </section>
 
@@ -96,22 +99,96 @@
           <button class="btn btn-outline" id="exportListBtn">
             <span>📋</span> 下载采购清单
           </button>
+          <div class="toolbar-sep"></div>
+          <button class="btn btn-refine" id="refineBtn">
+            <span>🔍</span> 局部优化
+          </button>
+        </div>
+
+        <!-- Region refine bar (hidden until selection confirmed) -->
+        <div class="refine-bar hidden" id="refineBar">
+          <span class="refine-hint" id="refineHint">拖拽框选要优化的区域</span>
+          <div class="refine-actions hidden" id="refineActions">
+            <button class="btn btn-sm btn-outline" id="refineRegenBtn">🔄 重新生成</button>
+            <button class="btn btn-sm btn-primary" id="refineMergeBtn">✅ 融合到图纸</button>
+            <button class="btn btn-sm btn-ghost"   id="refineDiscardBtn">✕ 放弃</button>
+          </div>
+          <button class="btn btn-sm btn-ghost" id="refineCancelBtn">取消框选</button>
         </div>
         <div class="canvas-wrapper" id="canvasWrapper">
           <div class="empty-state" id="emptyState">
             <p>🎨</p>
             <p>上传图片并点击「生成图纸」后，图纸将显示在这里</p>
           </div>
+          <!-- Main output canvas -->
           <canvas id="outputCanvas" class="hidden"></canvas>
+          <!-- Region selection overlay (SVG rect drawn on top) -->
+          <canvas id="selectionCanvas" class="selection-canvas hidden"></canvas>
+          <!-- Region preview overlay -->
+          <canvas id="previewCanvas"   class="preview-canvas   hidden"></canvas>
         </div>
       </div>
     </main>
   </div>
 
+  <!-- ===== Crop Modal ===== -->
+  <div class="crop-modal hidden" id="cropModal">
+    <div class="crop-modal-inner">
+      <div class="crop-modal-header">
+        <span class="crop-title">✂️ 裁剪图片</span>
+        <button class="crop-close" id="cropClose">✕</button>
+      </div>
+
+      <!-- Ratio buttons -->
+      <div class="crop-ratios">
+        <button class="ratio-btn active" data-ratio="free">自定义</button>
+        <button class="ratio-btn" data-ratio="1">1 : 1</button>
+        <button class="ratio-btn" data-ratio="0.75">3 : 4</button>
+        <button class="ratio-btn" data-ratio="1.333">4 : 3</button>
+        <button class="ratio-btn" data-ratio="1.778">16 : 9</button>
+        <button class="ratio-btn" data-ratio="0.5625">9 : 16</button>
+      </div>
+
+      <!-- Canvas crop area -->
+      <div class="crop-stage-wrap">
+        <div class="crop-stage" id="cropStage">
+          <canvas id="cropCanvas"></canvas>
+          <!-- Draggable selection box -->
+          <div class="crop-box" id="cropBox">
+            <div class="crop-overlay top"    id="overlayTop"></div>
+            <div class="crop-overlay bottom" id="overlayBottom"></div>
+            <div class="crop-overlay left"   id="overlayLeft"></div>
+            <div class="crop-overlay right"  id="overlayRight"></div>
+            <!-- Corner handles -->
+            <div class="crop-handle tl" data-dir="tl"></div>
+            <div class="crop-handle tr" data-dir="tr"></div>
+            <div class="crop-handle bl" data-dir="bl"></div>
+            <div class="crop-handle br" data-dir="br"></div>
+            <!-- Edge handles -->
+            <div class="crop-handle t"  data-dir="t"></div>
+            <div class="crop-handle b"  data-dir="b"></div>
+            <div class="crop-handle l"  data-dir="l"></div>
+            <div class="crop-handle r"  data-dir="r"></div>
+            <!-- Cross hair center -->
+            <div class="crop-crosshair"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="crop-actions">
+        <button class="btn btn-outline" id="cropReset">重置</button>
+        <button class="btn btn-primary" id="cropConfirm">确认裁剪</button>
+      </div>
+    </div>
+  </div>
+  <div class="crop-backdrop hidden" id="cropBackdrop"></div>
+
   <!-- Hidden canvas for export -->
   <canvas id="exportCanvas" style="display:none"></canvas>
 
   <script src="colorData.js"></script>
+  <script src="crop.js"></script>
+  <script src="refine.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

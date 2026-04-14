@@ -7,6 +7,8 @@ const uploadArea        = document.getElementById('uploadArea');
 const fileInput         = document.getElementById('fileInput');
 const uploadPlaceholder = document.getElementById('uploadPlaceholder');
 const previewImg        = document.getElementById('previewImg');
+const previewContainer  = document.getElementById('previewContainer');
+const recropBtn         = document.getElementById('recropBtn');
 const generateBtn       = document.getElementById('generateBtn');
 const outputCanvas      = document.getElementById('outputCanvas');
 const exportCanvas      = document.getElementById('exportCanvas');
@@ -27,8 +29,9 @@ const showGridEl     = document.getElementById('showGrid');
 const showCodeEl     = document.getElementById('showCode');
 
 // ---- State ----
-let loadedImage = null;
-let beadGrid    = null;   // 2D array of MARD color objs (or null for transparent)
+let loadedImage  = null;   // HTMLImageElement used as source for generation (may be cropped canvas)
+let originalImg  = null;   // the raw uploaded HTMLImageElement (for re-crop)
+let beadGrid     = null;
 let gridW = 0, gridH = 0;
 
 // ---- Constants ----
@@ -62,15 +65,40 @@ uploadArea.addEventListener('drop', e => {
 function loadFile(file) {
   if (!file) return;
   const url = URL.createObjectURL(file);
-  previewImg.src = url;
-  previewImg.onload = () => {
-    uploadPlaceholder.classList.add('hidden');
-    previewImg.classList.remove('hidden');
-    loadedImage = previewImg;
-    generateBtn.disabled = false;
+  const img = new Image();
+  img.onload = () => {
+    originalImg = img;
+    // Open crop modal; on confirm, set loadedImage and show preview
+    openCropModal(img, (croppedCanvas) => {
+      applySourceImage(croppedCanvas);
+    });
     URL.revokeObjectURL(url);
   };
+  img.src = url;
 }
+
+// Apply a canvas or image as the source for generation
+function applySourceImage(src) {
+  loadedImage = src;
+  window.loadedImage = src;
+  // Draw to preview img
+  if (src instanceof HTMLCanvasElement) {
+    previewImg.src = src.toDataURL();
+  } else {
+    previewImg.src = src.src;
+  }
+  uploadPlaceholder.classList.add('hidden');
+  previewContainer.classList.remove('hidden');
+  generateBtn.disabled = false;
+}
+
+// Re-crop button
+recropBtn.addEventListener('click', () => {
+  if (!originalImg) return;
+  openCropModal(originalImg, (croppedCanvas) => {
+    applySourceImage(croppedCanvas);
+  });
+});
 
 // ---- Generate ----
 generateBtn.addEventListener('click', generate);
@@ -93,6 +121,7 @@ function runGenerate() {
   const rows     = parseInt(canvasHeightEl.value);
   const maxColor = parseInt(maxColorsEl.value);
   gridW = cols; gridH = rows;
+  window.gridW = cols; window.gridH = rows;
 
   // ---- Step 1: Sample image into grid (dominant color per cell) ----
   // Use a slightly larger sample (4× oversampling per cell) to get dominant color
@@ -150,7 +179,7 @@ function runGenerate() {
   const allowedPalette = MARD_PALETTE.filter(c => allowedSet.has(c.mard));
 
   // ---- Step 4: Remap excluded colors ----
-  beadGrid = [];
+  beadGrid = []; window.beadGrid = beadGrid;
   for (let y = 0; y < rows; y++) {
     beadGrid.push([]);
     for (let x = 0; x < cols; x++) {
@@ -168,6 +197,8 @@ function runGenerate() {
   }
 
   // ---- Step 5: Final count & render ----
+  // Exit any active refine mode before new full generation
+  if (window._refineExitOnNewGenerate) window._refineExitOnNewGenerate();
   const finalCount = countColors();
   renderGrid(finalCount);
   renderPaletteList(finalCount);
@@ -431,3 +462,13 @@ function rerender() {
 }
 showGridEl.addEventListener('change', rerender);
 showCodeEl.addEventListener('change', rerender);
+
+// ---- Expose to refine.js ----
+window.beadGrid        = null;  // will be kept in sync via assignment
+window.gridW           = 0;
+window.gridH           = 0;
+window.loadedImage     = null;
+window.RENDER_CELL     = RENDER_CELL;
+window.countColors     = countColors;
+window.renderGrid      = renderGrid;
+window.renderPaletteList = renderPaletteList;
